@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>答案之书 · Tools</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #ffffff;
+    color: #111111;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 60px 24px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+.container {
+    max-width: 560px;
+    width: 100%;
+    text-align: center;
+}
+.back-link {
+    display: inline-block;
+    margin-bottom: 40px;
+    color: #888888;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+.back-link:hover { color: #111111; }
+
+h1 {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+.desc {
+    color: #888888;
+    font-size: 0.9rem;
+    margin-bottom: 48px;
+}
+
+/* 书 */
+.book {
+    width: 200px;
+    height: 260px;
+    margin: 0 auto 40px;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+.book:hover { transform: translateY(-6px); }
+
+.book-cover {
+    width: 100%;
+    height: 100%;
+    background: #111111;
+    border-radius: 8px 16px 16px 8px;
+    position: relative;
+    box-shadow: 6px 6px 0 rgba(0,0,0,0.1);
+}
+.book-cover::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 14px;
+    height: 100%;
+    background: #333333;
+    border-radius: 8px 0 0 8px;
+}
+.book-cover::after {
+    content: '?';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #ffffff;
+    font-size: 5rem;
+    font-family: Georgia, serif;
+    font-weight: 700;
+}
+
+.book.shaking {
+    animation: shake 0.5s ease-in-out;
+}
+@keyframes shake {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    20% { transform: translateY(-6px) rotate(-3deg); }
+    40% { transform: translateY(0) rotate(3deg); }
+    60% { transform: translateY(-4px) rotate(-2deg); }
+    80% { transform: translateY(0) rotate(1deg); }
+}
+
+.hint {
+    color: #888888;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+/* 结果 */
+.result {
+    display: none;
+    background: #f5f5f5;
+    border-radius: 16px;
+    padding: 40px 32px;
+    animation: fadeIn 0.8s ease;
+}
+.result.show { display: block; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.result-text {
+    font-family: Georgia, 'Songti SC', serif;
+    font-size: 1.3rem;
+    line-height: 1.8;
+    color: #111111;
+    font-weight: 500;
+}
+
+.date-note {
+    margin-top: 20px;
+    font-size: 0.8rem;
+    color: #aaaaaa;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <a class="back-link" href="index.html">← 返回工具集</a>
+    <h1>答案之书</h1>
+    <p class="desc">心里想一个问题，然后翻开这本书</p>
+
+    <div class="book" id="book" onclick="reveal()">
+        <div class="book-cover"></div>
+    </div>
+
+    <p class="hint" id="hint">点击书本，得到答案</p>
+
+    <div class="result" id="result">
+        <div class="result-text" id="answerText"></div>
+        <p class="date-note" id="dateNote"></p>
+    </div>
+</div>
+
+<script>
+const answers = [
+
+    '是的，去做吧。',
+    '答案已经在你心里了。',
+    '相信你的第一直觉。',
+    '这件事值得你认真对待。',
+    '会有一个意想不到的转机。',
+    '你比你以为的更有力量。',
+    '这次，为自己做一次选择。',
+    '你已经知道该怎么做。',
+    '你的感受是真实的，值得被听见。',
+    '你已经做得够好了。',
+    '这次，听自己的。',
+    '答案会在路上出现。',
+    '你值得被好好对待。',
+    '你的直觉是对的。',
+    '会有人理解你的。',
+    '现在做的事，以后会感谢自己。',
+    '你已经在变好了。',
+    '说出来的那一刻，就轻了。',
+    '这次，别委屈自己。',
+    '你比自己想象的更勇敢。',
+    '会好起来的。',
+    '这一次，先问问自己想要什么。',
+    '你已经很努力了。',
+    '你不需要马上做决定。',
+    '你的存在本身就有意义。',
+    '这一次，你说了算。',
+    '你值得一个更好的答案。',
+    '你已经走得很远了。',
+    '会有人接住你的。',
+    '这件事，你做得没错。',
+    '你不需要向谁交代。',
+    '答案可能会让你意外。',
+    '现在这样就很好。',
+    '你不需要完美。',
+    '这一次，相信过程。',
+    '你的努力有人看得见。',
+    '你值得被温柔以待。',
+    '答案已经在你身边了。',
+    '会有一个出口的。',
+    '你已经足够好了。',
+    '答案可能会迟到，但不会缺席。',
+    '你的感受比道理更重要。',
+    '你值得一个真诚的回应。',
+    '答案会在你放松的时候出现。',
+    '你会慢慢好起来的。',
+    '这一次，为自己活。',
+    '你已经做得很好了。',
+    '你值得被认真对待。',
+    '再等一等。',
+    '不要勉强。',
+    '换个方向试试。',
+    '现在还不是时候。',
+    '问问你最信任的人。',
+    '先照顾好自己。',
+    '不必向所有人解释。',
+    '慢慢来，不着急。',
+    '不是所有问题都需要答案。',
+    '允许自己休息一下。',
+    '这件事没有你想的那么严重。',
+    '留一点余地给自己。',
+    '可以拒绝。',
+    '不要用别人的标准衡量自己。',
+    '有些事，急不来。',
+    '你不需要现在就想清楚。',
+    '把注意力放回当下。',
+    '别怕犯错。',
+    '这件事，可以晚点再说。',
+    '先把眼前这一步走好。',
+    '不必解释，也不必证明。',
+    '别把自己逼得太紧。',
+    '允许自己不确定。',
+    '有些关系，松一点更好。',
+    '你需要的是时间，不是答案。',
+    '停下来，也是一种前进。',
+    '不必回头确认。',
+    '让事情自己发展一会儿。',
+    '你不需要所有人的认可。',
+    '你的节奏，不用和任何人比。',
+    '有些问题，可以放着不管。',
+    '答案不在别人那里。',
+    '允许自己慢一点。',
+    '这件事，换个角度看看。',
+    '先睡一觉，明天再说。',
+    '别急着否定自己。',
+    '有些话，说出来就好了。',
+    '不必勉强自己去迎合。',
+    '允许自己难过一会儿。',
+    '别把责任都揽在自己身上。',
+    '给自己一点耐心。',
+    '有些事，放下比抓住更难，也更值得。',
+    '允许自己重新开始。',
+    '别怕麻烦别人。',
+    '不必急着证明什么。',
+    '这件事，交给时间。',
+    '先深呼吸。',
+    '有些路，只能自己走。',
+    '这件事，可能不会如你所愿。',
+    '现在不是强求的时候。',
+    '你需要先接受它不会变。',
+    '有些答案，是“不”。',
+    '这件事，放下比坚持更合适。',
+    '不要继续骗自己了。',
+    '你等的那个回应，可能不会来。',
+    '有些关系，回不去了。',
+    '这次，你可能要失望了。',
+    '别再为它找理由了。',
+    '答案已经很明显，只是你不想承认。',
+    '这件事，不适合你。',
+    '你需要放手的，比你以为的多。',
+    '不会有人替你做这个决定。',
+    '继续下去，只会更累。',
+    '有些期待，该收回来了。',
+    '这次，没有两全的办法。',
+    '你需要面对的，是你一直在躲的。',
+    '这件事，不会因为你的努力而改变。',
+    '该结束的，就让它结束。',
+    '你不需要再证明什么了。',
+    '有些话，不必等一个回复。',
+    '这次，你得自己走出来。',
+    '放下它，你才能往前走。'
+];
+
+function todayKey() {
+    const d = new Date();
+    return 'answer_' + d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+
+function hasAnsweredToday() {
+    return localStorage.getItem(todayKey()) !== null;
+}
+
+function showAnswer() {
+    const saved = localStorage.getItem(todayKey());
+    if (saved) {
+        displayAnswer(saved);
+        disableBook();
+    }
+}
+
+function reveal() {
+    if (hasAnsweredToday()) {
+        document.getElementById('hint').textContent = '今天已经问过了，明天再来';
+        return;
+    }
+
+    const book = document.getElementById('book');
+    book.classList.add('shaking');
+
+    setTimeout(() => {
+        book.classList.remove('shaking');
+
+        const answer = answers[Math.floor(Math.random() * answers.length)];
+        localStorage.setItem(todayKey(), answer);
+        displayAnswer(answer);
+        disableBook();
+    }, 600);
+}
+
+function displayAnswer(answer) {
+    const result = document.getElementById('result');
+    document.getElementById('answerText').textContent = answer;
+
+    const d = new Date();
+    document.getElementById('dateNote').textContent = '翻开于 ' + d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日';
+
+    result.classList.add('show');
+}
+
+function disableBook() {
+    document.getElementById('book').style.opacity = '0.3';
+    document.getElementById('book').style.cursor = 'not-allowed';
+    document.getElementById('hint').textContent = '今天已经问过了，明天再来';
+}
+
+showAnswer();
+</script>
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>抽签 · Tools</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    background: #ffffff;
+    color: #111111;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 60px 24px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+.container {
+    max-width: 560px;
+    width: 100%;
+    text-align: center;
+}
+.back-link {
+    display: inline-block;
+    margin-bottom: 40px;
+    color: #888888;
+    text-decoration: none;
+    font-size: 0.9rem;
+    align-self: flex-start;
+}
+.back-link:hover { color: #111111; }
+
+h1 {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+.desc {
+    color: #888888;
+    font-size: 0.9rem;
+    margin-bottom: 48px;
+}
+
+/* 签筒 */
+.tube {
+    width: 120px;
+    height: 160px;
+    margin: 0 auto 40px;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+.tube:hover { transform: translateY(-4px); }
+.tube.disabled {
+    cursor: not-allowed;
+    opacity: 0.3;
+}
+.tube.disabled:hover { transform: none; }
+
+.tube-body {
+    width: 100%;
+    height: 100%;
+    background: #111111;
+    border-radius: 12px 12px 8px 8px;
+    position: relative;
+    overflow: hidden;
+}
+.tube-body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70%;
+    height: 20px;
+    background: #ffffff;
+    border-radius: 0 0 50% 50%;
+}
+.tube-stick {
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 60px;
+    background: #111111;
+    border-radius: 3px;
+}
+.tube-stick:nth-child(1) { left: 40%; transform: translateX(-50%) rotate(-8deg); }
+.tube-stick:nth-child(2) { left: 50%; transform: translateX(-50%) rotate(0deg); }
+.tube-stick:nth-child(3) { left: 60%; transform: translateX(-50%) rotate(8deg); }
+
+.tube.shaking {
+    animation: shake 0.5s ease-in-out;
+}
+@keyframes shake {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    20% { transform: translateY(-6px) rotate(-4deg); }
+    40% { transform: translateY(0) rotate(4deg); }
+    60% { transform: translateY(-4px) rotate(-3deg); }
+    80% { transform: translateY(0) rotate(2deg); }
+}
+
+.hint {
+    color: #888888;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+/* 结果 */
+.result {
+    display: none;
+    background: #f5f5f5;
+    border-radius: 16px;
+    padding: 40px 32px;
+    text-align: left;
+    animation: fadeIn 0.8s ease;
+}
+.result.show { display: block; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.result-level {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+.level-good { background: #111111; color: #ffffff; }
+.level-mid { background: #e0e0e0; color: #111111; }
+.level-bad { background: #ffffff; color: #111111; border: 1px solid #111111; }
+
+.result-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    font-family: Georgia, serif;
+}
+
+.result-poem {
+    font-family: Georgia, 'Songti SC', serif;
+    font-size: 1.05rem;
+    line-height: 2;
+    color: #333333;
+    margin-bottom: 20px;
+    padding-left: 16px;
+    border-left: 3px solid #111111;
+    white-space: pre-line;
+}
+
+.result-explain {
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: #666666;
+}
+
+.date-note {
+    margin-top: 20px;
+    font-size: 0.8rem;
+    color: #aaaaaa;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <a class="back-link" href="index.html">← 返回工具集</a>
+    <h1>抽签</h1>
+    <p class="desc">静心，默念你想问的事，然后抽一支签</p>
+
+    <div class="tube" id="tube" onclick="draw()">
+        <div class="tube-stick"></div>
+        <div class="tube-stick"></div>
+        <div class="tube-stick"></div>
+        <div class="tube-body"></div>
+    </div>
+
+    <p class="hint" id="hint">点击签筒抽签</p>
+
+    <div class="result" id="result">
+        <span class="result-level" id="level"></span>
+        <div class="result-title" id="title"></div>
+        <div class="result-poem" id="poem"></div>
+        <div class="result-explain" id="explain"></div>
+        <p class="date-note" id="dateNote"></p>
+    </div>
+</div>
+
+<script>
+const fortunes = [
+    {
+        level: 'good',
+        levelText: '上签',
+        title: '云开见月',
+        poem: '浮云散尽见明月，\n柳暗花明又一村。\n莫道前路多险阻，\n守得云开见月明。',
+        explain: '困顿即将过去，事情会逐渐明朗。你担心的那件事，答案比你想象的温和。耐心等待，不必强求。'
+    },
+    {
+        level: 'good',
+        levelText: '上签',
+        title: '顺水行舟',
+        poem: '一帆风顺下江陵，\n两岸青山相送迎。\n此去前程应万里，\n何须回首问归程。',
+        explain: '时机成熟，顺势而为即可。不要犹豫，也不要反复回头确认。你已经在正确的方向上了。'
+    },
+    {
+        level: 'mid',
+        levelText: '中签',
+        title: '静水深流',
+        poem: '静水深流不见波，\n其中有鱼自有乐。\n莫羡他人风浪起，\n安守本心即是得。',
+        explain: '表面平静，内里自有节奏。不要被别人的动静扰乱自己。此刻适合守，不适合攻。'
+    },
+    {
+        level: 'mid',
+        levelText: '中签',
+        title: '半山听雨',
+        poem: '半山听雨半山晴，\n行到中途莫问程。\n进退之间皆有路，\n只须静待雨声停。',
+        explain: '事情处在中间状态，还没到做决定的时候。再等一等，等雨停，路会自己显出来。'
+    },
+    {
+        level: 'bad',
+        levelText: '下签',
+        title: '风急浪高',
+        poem: '风急浪高舟难行，\n此时莫要强出头。\n退一步来观水面，\n潮起潮落自有时。',
+        explain: '眼下不宜冒进。你感到的阻力是真实的，不是错觉。暂时收一收，等风向变了再动。'
+    },
+    {
+        level: 'bad',
+        levelText: '下签',
+        title: '雾锁重山',
+        poem: '雾锁重山不见天，\n前路茫茫心茫然。\n且将心事付明月，\n待得风来雾自散。',
+        explain: '迷茫是暂时的。看不清的时候，不必强行看清。把注意力放回自己身上，风会来，雾会散。'
+    }
+];
+
+function todayKey() {
+    const d = new Date();
+    return 'draw_' + d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+
+function hasDrawnToday() {
+    return localStorage.getItem(todayKey()) !== null;
+}
+
+function showFate() {
+    const saved = localStorage.getItem(todayKey());
+    if (saved) {
+        displayResult(JSON.parse(saved));
+        disableTube();
+    }
+}
+
+function draw() {
+    if (hasDrawnToday()) {
+        document.getElementById('hint').textContent = '今日已抽，明天再来';
+        return;
+    }
+
+    const tube = document.getElementById('tube');
+    tube.classList.add('shaking');
+
+    setTimeout(() => {
+        tube.classList.remove('shaking');
+
+        const fortune = fortunes[Math.floor(Math.random() * fortunes.length)];
+        localStorage.setItem(todayKey(), JSON.stringify(fortune));
+        displayResult(fortune);
+        disableTube();
+    }, 600);
+}
+
+function displayResult(fortune) {
+    const result = document.getElementById('result');
+    const level = document.getElementById('level');
+
+    level.textContent = fortune.levelText;
+    level.className = 'result-level level-' + fortune.level;
+
+    document.getElementById('title').textContent = fortune.title;
+    document.getElementById('poem').textContent = fortune.poem;
+    document.getElementById('explain').textContent = fortune.explain;
+
+    const d = new Date();
+    document.getElementById('dateNote').textContent = '抽于 ' + d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日';
+
+    result.classList.add('show');
+}
+
+function disableTube() {
+    document.getElementById('tube').classList.add('disabled');
+    document.getElementById('hint').textContent = '今日已抽，明天再来';
+}
+
+showFate();
+</script>
+</body>
+</html>
